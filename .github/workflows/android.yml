@@ -31,13 +31,13 @@ jobs:
       run: ./gradlew assembleDebug
 
     - name: Rename APK Output
-      run: mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/SpesaFacile.apk
+      run: mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/SpesaFacile-v1.0.0.apk
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: SpesaFacile-APK
-        path: app/build/outputs/apk/debug/SpesaFacile.apk
+        path: app/build/outputs/apk/debug/SpesaFacile-v1.0.0.apk
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
@@ -56,9 +56,9 @@ jobs:
           - Widget interattivo per la Home Screen (Jetpack Glance).
           - Palette colori arancione e ambra basata sul logo ufficiale.
           
-          Scarica il file `SpesaFacile.apk` qui sotto per installare l'applicazione sul tuo dispositivo Android.
+          Scarica il file `SpesaFacile-v1.0.0.apk` qui sotto per installare l'applicazione sul tuo dispositivo Android.
         draft: false
         prerelease: false
-        files: app/build/outputs/apk/debug/SpesaFacile.apk
+        files: app/build/outputs/apk/debug/SpesaFacile-v1.0.0.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
