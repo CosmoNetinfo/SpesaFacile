@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SpesaFacile</string>
+    <string name="widget_description">Lista della spesa rapida</string>
+    <string name="widget_name">Spesa Rapida</string>
+</resources>
