@@ -46,6 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.spesafacile.data.model.ShoppingList
 import com.example.spesafacile.ui.viewmodel.ListsViewModel
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.example.spesafacile.util.UpdateChecker
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -56,6 +61,13 @@ fun ListsScreen(
     val lists by viewModel.allLists.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<ShoppingList?>(null) }
+    
+    val context = LocalContext.current
+    var newVersionAvailable by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        newVersionAvailable = UpdateChecker.checkForUpdate()
+    }
 
     Scaffold(
         topBar = {
@@ -163,6 +175,31 @@ fun ListsScreen(
             onConfirm = { name ->
                 viewModel.renameList(list, name)
                 renameTarget = null
+            }
+        )
+    }
+
+    // Dialogo Aggiornamento Disponibile
+    newVersionAvailable?.let { version ->
+        AlertDialog(
+            onDismissRequest = { newVersionAvailable = null },
+            title = { Text("Nuovo Aggiornamento!") },
+            text = { Text("È disponibile una nuova versione di SpesaFacile ($version). Vuoi scaricarla ora?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/CosmoNetinfo/SpesaFacile/releases"))
+                        context.startActivity(intent)
+                        newVersionAvailable = null
+                    }
+                ) {
+                    Text("Scarica")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { newVersionAvailable = null }) {
+                    Text("Più tardi")
+                }
             }
         )
     }
