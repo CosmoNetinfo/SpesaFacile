@@ -3,6 +3,8 @@ package com.example.spesafacile.data
 import androidx.room.withTransaction
 import com.example.spesafacile.data.model.*
 import java.util.Locale
+import com.example.spesafacile.util.TransferDocument
+import kotlinx.coroutines.flow.first
 
 class ShoppingRepository(
     private val db: AppDatabase,
@@ -36,7 +38,9 @@ class ShoppingRepository(
             if (clean.id == 0) itemDao.insert(clean) else check(itemDao.updateDetails(
                 clean.id, clean.listId, clean.name, clean.category, clean.quantity, clean.unit, clean.priceCents
             ) == 1) { "Prodotto non più disponibile" }
-            itemDao.saveSuggestion(ProductSuggestion(clean.name.lowercase(Locale.ROOT), clean.name, clean.category, clean.unit))
+            val key = clean.name.lowercase(Locale.ROOT)
+            val favorite = itemDao.getSuggestion(key)?.isFavorite ?: false
+            itemDao.saveSuggestion(ProductSuggestion(key, clean.name, clean.category, clean.unit, isFavorite = favorite))
         }
         onChanged()
     }
@@ -51,7 +55,7 @@ class ShoppingRepository(
     suspend fun deleteCheckedItems(id: Int) { itemDao.deleteCheckedItems(id); onChanged() }
     suspend fun duplicateList(source: ShoppingList): Long {
         val id = db.withTransaction {
-            val newId = listDao.insert(ShoppingList(name = "${source.name} (copia)")).toInt()
+            val newId = listDao.insert(ShoppingList(name = "${source.name} (copia)", budgetCents = source.budgetCents)).toInt()
             itemDao.snapshot(source.id).forEach { item ->
                 itemDao.insert(item.copy(id = 0, listId = newId, isChecked = false, createdAt = System.currentTimeMillis()))
             }
@@ -59,5 +63,45 @@ class ShoppingRepository(
         }
         onChanged()
         return id
+    }
+
+    suspend fun saveProduct(name: String, category: String, unit: String, favorite: Boolean = true) {
+        require(name.isNotBlank() && name.length <= 200)
+        require(Category.entries.any { it.name == category })
+        val clean = name.trim()
+        itemDao.saveSuggestion(ProductSuggestion(clean.lowercase(Locale.ROOT), clean, category, unit, isFavorite = favorite))
+    }
+    suspend fun setFavorite(key: String, favorite: Boolean) = itemDao.setFavorite(key, favorite)
+    suspend fun setBudget(id: Int, cents: Long?) {
+        require(cents == null || cents in 0..100_000_000L)
+        listDao.setBudget(id, cents)
+    }
+    suspend fun exportBackup(): TransferDocument = db.withTransaction {
+        TransferDocument(listDao.snapshot().map { list ->
+            com.example.spesafacile.util.TransferList(list.name, list.budgetCents, itemDao.snapshot(list.id))
+        }, itemDao.getSuggestions().first())
+    }
+    suspend fun importDocument(document: TransferDocument, digest: String? = null): List<Int> {
+        val ids = db.withTransaction {
+            if (digest != null) listDao.findSharedImport(digest)?.let { return@withTransaction listOf(it) }
+            val names = listDao.snapshot().map { it.name }.toMutableSet()
+            val inserted = document.lists.map { list ->
+                var name = list.name
+                var suffix = 1
+                while (name in names) { name = "${list.name} (importata $suffix)"; suffix++ }
+                names.add(name)
+                val id = listDao.insert(ShoppingList(name = name, budgetCents = list.budgetCents)).toInt()
+                list.items.forEach { item -> itemDao.insert(item.copy(id = 0, listId = id)) }
+                id
+            }
+            document.products.forEach { product ->
+                val existing = itemDao.getSuggestion(product.normalizedName)
+                itemDao.saveSuggestion(product.copy(isFavorite = product.isFavorite || existing?.isFavorite == true))
+            }
+            if (digest != null && inserted.size == 1) listDao.saveSharedImport(SharedImport(digest, inserted.single()))
+            inserted
+        }
+        onChanged()
+        return ids
     }
 }

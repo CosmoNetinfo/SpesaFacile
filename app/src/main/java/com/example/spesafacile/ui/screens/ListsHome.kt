@@ -1,6 +1,7 @@
 package com.example.spesafacile.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,9 +34,11 @@ fun ListsHome(
     onRename: (Int) -> Unit,
     onDuplicate: (ListSummary) -> Unit,
     onDelete: (Int) -> Unit,
-    snackbar: SnackbarHostState = remember { SnackbarHostState() }
+    snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    bottomBar: @Composable () -> Unit = {}
 ) {
     Scaffold(
+        bottomBar = bottomBar,
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
@@ -107,7 +110,7 @@ private fun WelcomeCard(lists: List<ListSummary>) {
         ))).padding(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("UN PENSIERO IN MENO", style = MaterialTheme.typography.labelSmall,
+                    Text("IL TUO BLOCCO DELLA SPESA", style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer)
                     Text("Cosa serve oggi?", style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -143,8 +146,7 @@ private fun SummaryValue(value: String, label: String, modifier: Modifier) {
 
 @Composable
 private fun FirstListCard(onCreate: () -> Unit) {
-    OutlinedCard(shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    NotebookSheet {
         Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)) {
                 Icon(Icons.Outlined.PlaylistAdd, null, Modifier.padding(16.dp).size(32.dp), tint = MaterialTheme.colorScheme.primary)
@@ -174,9 +176,7 @@ private fun ShoppingListCard(summary: ListSummary, onClick: () -> Unit, onRename
     var menu by rememberSaveable(summary.id) { mutableStateOf(false) }
     val completed = summary.totalCount > 0 && summary.uncheckedCount == 0
     val bought = (summary.totalCount - summary.uncheckedCount).coerceAtLeast(0)
-    ElevatedCard(onClick = onClick, shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)) {
+    NotebookSheet(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f), shape = RoundedCornerShape(15.dp)) {

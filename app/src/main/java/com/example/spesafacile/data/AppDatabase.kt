@@ -9,15 +9,24 @@ import com.example.spesafacile.data.dao.ShoppingListDao
 import com.example.spesafacile.data.model.ShoppingItem
 import com.example.spesafacile.data.model.ShoppingList
 import com.example.spesafacile.data.model.ProductSuggestion
+import com.example.spesafacile.data.model.SharedImport
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [ShoppingList::class, ShoppingItem::class, ProductSuggestion::class], version = 2, exportSchema = true)
+@Database(entities = [ShoppingList::class, ShoppingItem::class, ProductSuggestion::class, SharedImport::class], version = 3, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun shoppingListDao(): ShoppingListDao
     abstract fun shoppingItemDao(): ShoppingItemDao
 
     companion object {
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE shopping_lists ADD COLUMN budgetCents INTEGER")
+                db.execSQL("ALTER TABLE product_suggestions ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("CREATE TABLE shared_imports (digest TEXT NOT NULL PRIMARY KEY, listId INTEGER NOT NULL, FOREIGN KEY(listId) REFERENCES shopping_lists(id) ON UPDATE NO ACTION ON DELETE CASCADE)")
+                db.execSQL("CREATE INDEX index_shared_imports_listId ON shared_imports(listId)")
+            }
+        }
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE TABLE shopping_items_new (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, listId INTEGER NOT NULL, name TEXT NOT NULL, category TEXT NOT NULL, quantity REAL NOT NULL, unit TEXT NOT NULL, priceCents INTEGER, isChecked INTEGER NOT NULL, createdAt INTEGER NOT NULL, FOREIGN KEY(listId) REFERENCES shopping_lists(id) ON UPDATE NO ACTION ON DELETE CASCADE)")
@@ -38,7 +47,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "spesa_facile_database"
-                ).addMigrations(MIGRATION_1_2).build()
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
                 INSTANCE = instance
                 instance
             }

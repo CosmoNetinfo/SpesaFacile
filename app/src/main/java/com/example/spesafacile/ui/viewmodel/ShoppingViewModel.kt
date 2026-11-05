@@ -47,5 +47,9 @@ class ShoppingViewModel(application: Application, private val state: SavedStateH
     }
     fun restoreItem(item: ShoppingItem) = change { repository.restoreItem(item) }
     fun clearChecked() = change { repository.deleteCheckedItems(listId) }
+    fun setBudget(cents: Long?) = change {
+        repository.setBudget(listId, cents)
+        _events.send(ShoppingEvent.Message("Budget aggiornato"))
+    }
     fun toggleGrouped() { state["grouped"] = !showGrouped.value }
 }

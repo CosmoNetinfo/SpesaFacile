@@ -8,8 +8,8 @@ val OrangePrimaryVariant = Color(0xFFC76900)
 val OrangeSecondary = Color(0xFFE25615)
 val OrangeContainer = Color(0xFFFFDBBE)
 val OrangeOnContainer = Color(0xFF2D1600)
-val SurfaceLight = Color(0xFFFFFDFB)
-val BackgroundLight = Color(0xFFFFFDFB)
+val SurfaceLight = Color(0xFFFFFAEE)
+val BackgroundLight = Color(0xFFFFFAEE)
 val ErrorLight = Color(0xFFBA1A1A)
 
 // Dark theme

@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class ShoppingList(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val budgetCents: Long? = null
 )

@@ -9,6 +9,8 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.example.spesafacile.ui.screens.ListsScreen
 import com.example.spesafacile.ui.screens.ShoppingScreen
+import com.example.spesafacile.ui.screens.AppHomeShell
+import com.example.spesafacile.ui.screens.SharedListScreen
 
 @Composable
 fun SpesaFacileNavGraph() {
@@ -19,11 +21,21 @@ fun SpesaFacileNavGraph() {
         startDestination = "lists"
     ) {
         composable("lists") {
-            ListsScreen(
+            AppHomeShell(
                 onListClick = { listId ->
                     navController.navigate("shopping/$listId")
                 }
             )
+        }
+
+        composable(
+            route = "import?data={data}",
+            arguments = listOf(navArgument("data") { type = NavType.StringType; defaultValue = "" }),
+            deepLinks = listOf(navDeepLink { uriPattern = "spesafacile://import?data={data}" })
+        ) { entry ->
+            SharedListScreen(entry.arguments?.getString("data").orEmpty(),
+                onOpen = { id -> navController.navigate("shopping/$id") { popUpTo("lists") } },
+                onCancel = { navController.navigate("lists") { popUpTo("lists") { inclusive = true } } })
         }
 
         composable(

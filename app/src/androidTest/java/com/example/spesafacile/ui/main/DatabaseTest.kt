@@ -56,7 +56,7 @@ class DatabaseTest {
             }).build())
         helper.writableDatabase
         helper.close()
-        val db = Room.databaseBuilder(context, AppDatabase::class.java, name).addMigrations(AppDatabase.MIGRATION_1_2).build()
+        val db = Room.databaseBuilder(context, AppDatabase::class.java, name).addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3).build()
         try {
             val item = db.shoppingItemDao().snapshot(1).single()
             assertEquals("Latte", item.name)
