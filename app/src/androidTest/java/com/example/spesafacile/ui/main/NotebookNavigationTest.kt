@@ -1,6 +1,7 @@
 package com.example.spesafacile.ui.main
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.example.spesafacile.theme.SpesaFacileTheme
@@ -10,6 +11,23 @@ import org.junit.Test
 
 class NotebookNavigationTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+    @Test fun colorChoiceIsSavedAndUpdatesTheNotebook() {
+        val preferences = com.example.spesafacile.data.AppPreferences.get(compose.activity)
+        preferences.setNotebookColor(com.example.spesafacile.data.NotebookColor.ORANGE)
+        compose.setContent {
+            val color = preferences.notebookColor.collectAsState().value
+            SpesaFacileTheme(darkTheme = false, notebookColor = color) { AppHomeShell({}) }
+        }
+        try {
+            compose.onNodeWithText("Il mio blocco", useUnmergedTree = true).performClick()
+            compose.onNodeWithText("Salvia").performScrollTo().performClick()
+            compose.onNodeWithText("Salvia").assertIsSelected()
+            org.junit.Assert.assertEquals("SAGE", compose.activity.getSharedPreferences("spesafacile_settings", android.content.Context.MODE_PRIVATE).getString("notebook_color", null))
+            compose.onNodeWithText("Liste", useUnmergedTree = true).performClick()
+            compose.waitUntil(10000) { compose.onAllNodesWithTag("home-list").fetchSemanticsNodes().isNotEmpty() }
+            saveNotebookPreview(compose, "notebook-sage")
+        } finally { preferences.setNotebookColor(com.example.spesafacile.data.NotebookColor.ORANGE) }
+    }
     @Test fun appHasProductsAndUsableSettings() {
         compose.setContent { SpesaFacileTheme(darkTheme = false) { AppHomeShell({}) } }
         compose.waitUntil(10000) { compose.onAllNodesWithTag("home-list").fetchSemanticsNodes().isNotEmpty() }

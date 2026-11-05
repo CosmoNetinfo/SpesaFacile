@@ -76,5 +76,17 @@ class NotebookDataTest {
         val manager = AppUpdateManager.get(context)
         assertThrows(IllegalArgumentException::class.java) { manager.verify(file, AppRelease("v99.0.0", "", digest, file.length())) }
         assertThrows(IllegalArgumentException::class.java) { manager.verify(file, AppRelease("v99.0.0", "", "0".repeat(64), file.length())) }
+        // The verified cache path must remain readable by the package parser and shareable with Android's installer.
+        val cached = java.io.File(context.cacheDir, "updates/current.apk")
+        cached.parentFile!!.mkdirs()
+        try {
+            file.copyTo(cached, overwrite = true)
+            val rejected = assertThrows(IllegalArgumentException::class.java) {
+                manager.verify(cached, AppRelease("v99.0.0", "", digest, cached.length()))
+            }
+            assertTrue(rejected.message!!.contains("già installata"))
+            val uri = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".updates", cached)
+            context.contentResolver.openInputStream(uri)!!.use { input -> assertEquals(0x50, input.read()) }
+        } finally { cached.delete() }
     }
 }

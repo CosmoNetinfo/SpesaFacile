@@ -6,7 +6,15 @@ Il progetto funziona con un database locale: per creare e consultare le liste no
 
 [Scarica l’ultima release](https://github.com/CosmoNetinfo/SpesaFacile/releases/latest) · [Landing page](https://cosmonetinfo.github.io/SpesaFacile-landing-page/) · [Segnala un problema](https://github.com/CosmoNetinfo/SpesaFacile/issues)
 
-> **Stato della versione:** questo codice contiene la **1.3.1** (`versionCode = 6`). L’APK presente in Releases può essere precedente: verifica il numero della release prima di aspettarti tutte le funzioni descritte qui. Una modifica al codice non pubblica automaticamente una nuova versione.
+> **Stato della versione:** questo codice contiene la **1.3.2** (`versionCode = 7`). L’APK presente in Releases può essere precedente: verifica il numero della release prima di aspettarti tutte le funzioni descritte qui. Una modifica al codice non pubblica automaticamente una nuova versione.
+
+## Novità della versione 1.3.2
+
+- **Colori del blocco:** da Il mio blocco puoi scegliere Arancio, Salvia, Azzurro o Rosa. La scelta si applica subito a pulsanti, schede, selettori e righe del notes, funziona con l’aspetto chiaro/scuro e viene conservata al riavvio. Lo sfondo resta color carta.
+- **Icona sul telefono:** carrello arancio su carta a righe, ridisegnato in vettoriale con varianti adattiva, circolare e monocromatica.
+- **Download degli aggiornamenti:** il file viene letto direttamente dal gestore download e copiato nella cache privata prima dei controlli di integrità, versione e firma. Gli errori distinguono spazio insufficiente, problemi di rete, file incompleto e firma incompatibile. Resta disponibile il pulsante Scarica dal browser, anche durante l’attesa del Wi-Fi.
+
+Se una versione precedente mostra «Download o verifica non riusciti», scarica l’APK dalla release ufficiale nel browser e aprilo sul telefono. Installa sopra l’app esistente per conservare le liste; Android deve comunque autorizzare la sorgente e confermare l’aggiornamento. Una firma incompatibile impedisce l’aggiornamento anche dal browser: in quel caso esporta prima un backup, senza disinstallare alla cieca.
 
 ## Correzioni della versione 1.3.1
 

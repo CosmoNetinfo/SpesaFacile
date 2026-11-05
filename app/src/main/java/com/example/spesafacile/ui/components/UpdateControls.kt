@@ -42,6 +42,15 @@ fun UpdateControls(manager: AppUpdateManager) {
             }) { Text("Installa aggiornamento") }
             Text("Android richiede la conferma dell’installazione.", style = MaterialTheme.typography.bodySmall)
         }
+        state.release?.let { release ->
+            TextButton(onClick = {
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(release.url)))
+                } catch (_: android.content.ActivityNotFoundException) {
+                    android.widget.Toast.makeText(context, "Nessun browser disponibile sul telefono", android.widget.Toast.LENGTH_LONG).show()
+                }
+            }) { Text("Scarica dal browser") }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Switch(checked = automatic, onCheckedChange = manager::setAutoDownload,
                 modifier = Modifier.semantics { contentDescription = "Scarica automaticamente con Wi-Fi" })
