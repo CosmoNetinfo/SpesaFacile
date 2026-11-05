@@ -3,7 +3,7 @@ package com.example.spesafacile.theme
 import androidx.compose.ui.graphics.Color
 
 // Light theme
-val OrangePrimary = Color(0xFFED840C)
+val OrangePrimary = Color(0xFFAD4D00)
 val OrangePrimaryVariant = Color(0xFFC76900)
 val OrangeSecondary = Color(0xFFE25615)
 val OrangeContainer = Color(0xFFFFDBBE)

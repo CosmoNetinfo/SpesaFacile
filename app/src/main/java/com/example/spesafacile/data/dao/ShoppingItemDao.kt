@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.spesafacile.data.model.ShoppingItem
+import com.example.spesafacile.data.model.ProductSuggestion
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -17,8 +18,26 @@ interface ShoppingItemDao {
     @Query("SELECT COUNT(*) FROM shopping_items WHERE listId = :listId AND isChecked = 0")
     fun getUncheckedCount(listId: Int): Flow<Int>
 
-    @Query("SELECT DISTINCT name FROM shopping_items ORDER BY name ASC")
-    fun getAllItemNames(): Flow<List<String>>
+    @Query("SELECT * FROM product_suggestions ORDER BY lastUsedAt DESC, name ASC")
+    fun getSuggestions(): Flow<List<ProductSuggestion>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveSuggestion(suggestion: ProductSuggestion)
+
+    @Query("SELECT * FROM shopping_items WHERE listId = :listId ORDER BY createdAt, id")
+    suspend fun snapshot(listId: Int): List<ShoppingItem>
+
+    @Query("UPDATE shopping_items SET isChecked = :checked WHERE id = :id")
+    suspend fun setChecked(id: Int, checked: Boolean)
+
+    @Query("UPDATE shopping_items SET quantity = :quantity WHERE id = :id")
+    suspend fun setQuantity(id: Int, quantity: Double)
+
+    @Query("UPDATE shopping_items SET name = :name, category = :category, quantity = :quantity, unit = :unit, priceCents = :priceCents WHERE id = :id AND listId = :listId")
+    suspend fun updateDetails(id: Int, listId: Int, name: String, category: String, quantity: Double, unit: String, priceCents: Long?): Int
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun restore(item: ShoppingItem)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: ShoppingItem)

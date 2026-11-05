@@ -12,14 +12,25 @@ android {
         applicationId = "com.example.spesafacile"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val releaseStore = providers.environmentVariable("SPESA_KEYSTORE_PATH").orNull
+    if (releaseStore != null) {
+        signingConfigs.create("production") {
+            storeFile = file(releaseStore)
+            storePassword = providers.environmentVariable("SPESA_STORE_PASSWORD").get()
+            keyAlias = providers.environmentVariable("SPESA_KEY_ALIAS").get()
+            keyPassword = providers.environmentVariable("SPESA_KEY_PASSWORD").get()
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (releaseStore != null) signingConfig = signingConfigs.getByName("production")
         }
     }
     compileOptions {
@@ -29,7 +40,7 @@ android {
     buildFeatures {
       compose = true
       aidl = false
-      buildConfig = false
+      buildConfig = true
       shaders = false
     }
 
@@ -39,6 +50,8 @@ android {
       }
     }
 }
+
+ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 
 kotlin {
     jvmToolchain(17)
@@ -92,4 +105,5 @@ dependencies {
   androidTestImplementation(libs.androidx.test.ext.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.androidx.test.espresso.core)
+  androidTestImplementation(libs.kotlinx.coroutines.test)
 }
