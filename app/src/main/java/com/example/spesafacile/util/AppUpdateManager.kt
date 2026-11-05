@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.util.Log
 import androidx.core.content.FileProvider
 import com.example.spesafacile.BuildConfig
 import kotlinx.coroutines.*
@@ -101,6 +102,8 @@ class AppUpdateManager private constructor(private val context: Context) {
                 if (target.exists()) target.delete()
                 val request = DownloadManager.Request(Uri.parse(release.url)).setTitle("SpesaFacile ${release.version}")
                     .setDescription("Aggiornamento dell’app")
+                    .setMimeType("application/vnd.android.package-archive")
+                    .addRequestHeader("User-Agent", "SpesaFacile/${BuildConfig.VERSION_NAME}")
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                     .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, filename)
                 if (wifiOnly) request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI).setAllowedOverMetered(false)
@@ -109,7 +112,10 @@ class AppUpdateManager private constructor(private val context: Context) {
                     .putString("url", release.url).putLong("bytes", release.bytes).putBoolean("pending_auto", wifiOnly).apply()
                 _state.value = UpdateState(downloading = true, release = release, message = if (wifiOnly) "Download automatico in attesa del Wi-Fi" else "Download avviato")
                 watch(id, release)
-            } catch (_: Exception) { _state.update { it.copy(downloading = false, message = "Impossibile avviare il download") } }
+            } catch (e: Exception) {
+                Log.w("SpesaFacileUpdate", "Cannot enqueue update", e)
+                _state.update { it.copy(downloading = false, message = "Impossibile avviare il gestore download. Puoi scaricare l’APK dal browser.") }
+            }
         }
     }
 
@@ -119,47 +125,74 @@ class AppUpdateManager private constructor(private val context: Context) {
             try {
                 while (isActive) {
                     val cursor = downloads.query(DownloadManager.Query().setFilterById(id))
-                    val status = cursor.use {
-                        check(it.moveToFirst())
+                    val (status, reason) = cursor.use {
+                        check(it.moveToFirst()) { "Il gestore download non trova più il file. Scaricalo nuovamente o usa il browser." }
                         val total = it.getLong(it.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
                         val done = it.getLong(it.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
                         _state.update { state -> state.copy(progress = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else null) }
-                        it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                        it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) to
+                            it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
                     }
                     if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                        val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "SpesaFacile-${release.version}.apk")
+                        // Read the file owned by DownloadManager, rather than assuming its on-disk path.
+                        val directory = File(context.cacheDir, "updates").apply { mkdirs() }
+                        val file = File(directory, "SpesaFacile-${release.version}.apk")
+                        downloads.openDownloadedFile(id).use { descriptor ->
+                            android.os.ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { input ->
+                                file.outputStream().use { output ->
+                                    val buffer = ByteArray(8192)
+                                    var bytes = 0L
+                                    while (true) {
+                                        val count = input.read(buffer)
+                                        if (count < 0) break
+                                        bytes += count
+                                        require(bytes <= release.bytes) { "Il file scaricato ha dimensioni inattese. Riprova il download." }
+                                        output.write(buffer, 0, count)
+                                    }
+                                }
+                            }
+                        }
                         verify(file, release)
                         _state.value = UpdateState(release = release, readyFile = file, message = "Aggiornamento verificato e pronto da installare")
                         return@launch
                     }
-                    check(status != DownloadManager.STATUS_FAILED)
+                    check(status != DownloadManager.STATUS_FAILED) { downloadFailureMessage(reason) }
+                    if (status == DownloadManager.STATUS_PAUSED) {
+                        _state.update { it.copy(message = when (reason) {
+                            DownloadManager.PAUSED_WAITING_FOR_NETWORK -> "Download in attesa della connessione."
+                            DownloadManager.PAUSED_QUEUED_FOR_WIFI -> "Download in attesa del Wi-Fi."
+                            else -> "Download in pausa: il telefono riproverà. Puoi usare il browser."
+                        }) }
+                    }
                     delay(1000)
                 }
             } catch (e: CancellationException) { throw e }
-            catch (_: Exception) {
+            catch (e: Exception) {
+                Log.w("SpesaFacileUpdate", "Update download or verification failed", e)
                 downloads.remove(id)
                 preferences.edit().remove("download_id").apply()
-                _state.value = UpdateState(release = release, message = "Download o verifica non riusciti. Riprova dall’app.")
+                _state.value = UpdateState(release = release, message = e.message
+                    ?: "Download o verifica non riusciti. Riprova oppure scarica dal browser.")
             }
         }
     }
 
     @Suppress("DEPRECATION")
     internal fun verify(file: File, release: AppRelease) {
-        require(file.length() == release.bytes && file.length() in 1..60_000_000)
+        require(file.length() == release.bytes && file.length() in 1..60_000_000) { "Download incompleto. Scarica nuovamente l’aggiornamento." }
         val digest = MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input -> val buffer = ByteArray(8192); while (true) { val n = input.read(buffer); if (n < 0) break; digest.update(buffer, 0, n) } }
-        require(digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) } == release.sha256)
+        require(digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) } == release.sha256) { "Il file scaricato non corrisponde all’originale. Riprova il download." }
         val flag = if (Build.VERSION.SDK_INT >= 28) PackageManager.GET_SIGNING_CERTIFICATES else PackageManager.GET_SIGNATURES
         val installed = context.packageManager.getPackageInfo(context.packageName, flag)
-        val archive = checkNotNull(context.packageManager.getPackageArchiveInfo(file.absolutePath, flag))
-        require(archive.packageName == context.packageName)
+        val archive = checkNotNull(context.packageManager.getPackageArchiveInfo(file.absolutePath, flag)) { "Android non riesce a leggere l’APK. Riprova o scaricalo dal browser." }
+        require(archive.packageName == context.packageName) { "Questo APK non appartiene a SpesaFacile." }
         val oldCode = if (Build.VERSION.SDK_INT >= 28) installed.longVersionCode else installed.versionCode.toLong()
         val newCode = if (Build.VERSION.SDK_INT >= 28) archive.longVersionCode else archive.versionCode.toLong()
-        require(newCode > oldCode)
+        require(newCode > oldCode) { "Questa versione è già installata o è precedente a quella presente." }
         val current = if (Build.VERSION.SDK_INT >= 28) installed.signingInfo!!.apkContentsSigners else installed.signatures!!
         val incoming = if (Build.VERSION.SDK_INT >= 28) archive.signingInfo!!.apkContentsSigners else archive.signatures!!
-        require(current.map { it.toCharsString() }.toSet() == incoming.map { it.toCharsString() }.toSet())
+        require(current.map { it.toCharsString() }.toSet() == incoming.map { it.toCharsString() }.toSet()) { "La firma è diversa da quella dell’app installata. Prima di cambiare installazione, esporta un backup delle liste." }
     }
 
     fun install() {
@@ -187,6 +220,14 @@ class AppUpdateManager private constructor(private val context: Context) {
         } finally { connection.disconnect() }
     }
     companion object {
+        internal fun downloadFailureMessage(reason: Int): String = when (reason) {
+            DownloadManager.ERROR_INSUFFICIENT_SPACE -> "Spazio insufficiente sul telefono. Libera spazio e riprova."
+            DownloadManager.ERROR_DEVICE_NOT_FOUND -> "La memoria di destinazione non è disponibile. Prova dal browser."
+            DownloadManager.ERROR_HTTP_DATA_ERROR, DownloadManager.ERROR_TOO_MANY_REDIRECTS,
+            DownloadManager.ERROR_UNHANDLED_HTTP_CODE -> "Il gestore download non riesce a scaricare da GitHub. Prova dal browser."
+            DownloadManager.ERROR_FILE_ERROR, DownloadManager.ERROR_FILE_ALREADY_EXISTS -> "Il gestore download non riesce a salvare l’APK. Prova dal browser."
+            else -> "Download non riuscito (codice $reason). Riprova oppure scarica dal browser."
+        }
         @Volatile private var instance: AppUpdateManager? = null
         fun get(context: Context): AppUpdateManager = instance ?: synchronized(this) {
             instance ?: AppUpdateManager(context.applicationContext).also { instance = it }

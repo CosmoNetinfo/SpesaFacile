@@ -24,12 +24,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val appearance by AppPreferences.get(applicationContext).appearance.collectAsStateWithLifecycle()
+            val notebookColor by AppPreferences.get(applicationContext).notebookColor.collectAsStateWithLifecycle()
             val dark = when (appearance) {
                 Appearance.SYSTEM -> isSystemInDarkTheme()
                 Appearance.LIGHT -> false
                 Appearance.DARK -> true
             }
-            SpesaFacileTheme(darkTheme = dark) {
+            SpesaFacileTheme(darkTheme = dark, notebookColor = notebookColor) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

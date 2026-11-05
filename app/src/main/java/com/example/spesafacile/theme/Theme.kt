@@ -9,6 +9,38 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.ColorScheme
+import com.example.spesafacile.data.NotebookColor
+
+internal fun notebookColors(dark: Boolean, color: NotebookColor): ColorScheme {
+    val base = if (dark) DarkColorScheme else LightColorScheme
+    if (color == NotebookColor.ORANGE) return base
+    val lightAccent: Color
+    val paleAccent: Color
+    val deepAccent: Color
+    when (color) {
+        NotebookColor.SAGE -> { lightAccent = Color(0xFF396647); paleAccent = Color(0xFFC4EBD0); deepAccent = Color(0xFF163D25) }
+        NotebookColor.BLUE -> { lightAccent = Color(0xFF285F83); paleAccent = Color(0xFFCCE7FF); deepAccent = Color(0xFF10384F) }
+        NotebookColor.ROSE -> { lightAccent = Color(0xFF98465D); paleAccent = Color(0xFFFFD9E2); deepAccent = Color(0xFF542335) }
+        NotebookColor.ORANGE -> return base
+    }
+    return base.copy(
+        primary = if (dark) paleAccent else lightAccent,
+        onPrimary = if (dark) deepAccent else Color.White,
+        primaryContainer = if (dark) deepAccent else paleAccent,
+        onPrimaryContainer = if (dark) paleAccent else deepAccent,
+        secondary = if (dark) paleAccent else lightAccent,
+        onSecondary = if (dark) deepAccent else Color.White,
+        secondaryContainer = if (dark) deepAccent else paleAccent,
+        onSecondaryContainer = if (dark) paleAccent else deepAccent,
+        tertiary = if (dark) paleAccent else lightAccent,
+        onTertiary = if (dark) deepAccent else Color.White,
+        tertiaryContainer = if (dark) deepAccent else paleAccent,
+        onTertiaryContainer = if (dark) paleAccent else deepAccent,
+        surfaceTint = if (dark) paleAccent else lightAccent,
+        inversePrimary = if (dark) lightAccent else paleAccent
+    )
+}
 
 private val LightColorScheme = lightColorScheme(
     primary = OrangePrimary,
@@ -85,9 +117,10 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun SpesaFacileTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    notebookColor: NotebookColor = NotebookColor.ORANGE,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = notebookColors(darkTheme, notebookColor)
 
     MaterialTheme(
         colorScheme = colorScheme,

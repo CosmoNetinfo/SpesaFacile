@@ -27,6 +27,7 @@ fun SettingsScreen(bottomBar: @Composable () -> Unit) {
     val context = LocalContext.current
     val preferences = remember { AppPreferences.get(context) }
     val appearance by preferences.appearance.collectAsStateWithLifecycle()
+    val notebookColor by preferences.notebookColor.collectAsStateWithLifecycle()
     val repository = remember { AppContainer.repository(context) }
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
@@ -78,6 +79,23 @@ fun SettingsScreen(bottomBar: @Composable () -> Unit) {
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         RadioButton(appearance == value, onClick = { preferences.setAppearance(value) })
                         TextButton(onClick = { preferences.setAppearance(value) }) { Text(value.label) }
+                    }
+                }
+                HorizontalDivider()
+                Text("Il colore del tuo blocco", style = MaterialTheme.typography.titleMedium)
+                Text("Il colore cambia subito e viene ricordato anche al prossimo avvio.")
+                NotebookColor.entries.chunked(2).forEach { pair ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        pair.forEach { value ->
+                            FilterChip(selected = notebookColor == value,
+                                onClick = { preferences.setNotebookColor(value) },
+                                label = { Text(value.label) }, modifier = Modifier.weight(1f),
+                                leadingIcon = {
+                                    Surface(color = com.example.spesafacile.theme.notebookColors(false, value).primary,
+                                        shape = androidx.compose.foundation.shape.CircleShape,
+                                        modifier = Modifier.size(16.dp)) {}
+                                })
+                        }
                     }
                 }
             } } }
