@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -85,10 +86,9 @@ fun ShoppingScreen(listId: Int, onBack: () -> Unit, focusAdd: Boolean = false) {
         }
     }
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }, topBar = {
-        TopAppBar(title = { Text(list?.name ?: "Lista", maxLines = 1) },
+        TopAppBar(title = { Text(list?.name ?: "Lista", maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium) },
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Indietro") } },
             actions = {
-                IconButton(onClick = model::toggleGrouped) { Icon(if (grouped) Icons.Default.ViewList else Icons.Default.Category, if (grouped) "Vista lista" else "Raggruppa per categoria") }
                 Box {
                     IconButton(onClick = { shareMenu = true }, enabled = list != null) { Icon(Icons.Default.Share, "Condividi lista") }
                     DropdownMenu(shareMenu, onDismissRequest = { shareMenu = false }) {
@@ -109,6 +109,7 @@ fun ShoppingScreen(listId: Int, onBack: () -> Unit, focusAdd: Boolean = false) {
                 Box {
                     IconButton(onClick = { optionsMenu = true }) { Icon(Icons.Default.MoreVert, "Opzioni della lista") }
                     DropdownMenu(optionsMenu, onDismissRequest = { optionsMenu = false }) {
+                        DropdownMenuItem(text = { Text(if (grouped) "Vista elenco" else "Raggruppa per categoria") }, onClick = { optionsMenu = false; model.toggleGrouped() })
                         DropdownMenuItem(text = { Text("Imposta budget") }, onClick = { optionsMenu = false; budgetDialog = true })
                         DropdownMenuItem(text = { Text("Svuota acquistati") }, enabled = checked.isNotEmpty(), onClick = { optionsMenu = false; clearDialog = true })
                     }
