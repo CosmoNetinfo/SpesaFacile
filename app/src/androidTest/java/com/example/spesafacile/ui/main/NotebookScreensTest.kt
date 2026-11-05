@@ -19,7 +19,7 @@ class NotebookScreensTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
-    @Test fun shoppingShowsBudgetAndShareOptions() = runBlocking {
+    @Test fun shoppingShowsBudgetAndShareOptions() = runBlocking<Unit> {
         val db = AppDatabase.getDatabase(context)
         val repo = ShoppingRepository(db)
         val id = repo.insertList(ShoppingList(name = "Spesa della settimana", budgetCents = 2500)).toInt()
@@ -35,7 +35,7 @@ class NotebookScreensTest {
         } finally { repo.deleteList(ShoppingList(id = id, name = "Spesa della settimana")) }
     }
 
-    @Test fun sharedListCanBeSavedAndOpened() = runBlocking {
+    @Test fun sharedListCanBeSavedAndOpened() = runBlocking<Unit> {
         val token = android.net.Uri.parse(TransferCodec.share(TransferList("Cena in famiglia", 2000,
             listOf(ShoppingItem(listId = 0, name = "Pomodori", quantity = 0.5, unit = "kg", category = Category.FRUTTA_VERDURA.name))))).fragment!!
         var opened: Int? = null

@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.spesafacile.util.AppUpdateManager
 
@@ -40,7 +42,8 @@ fun UpdateControls(manager: AppUpdateManager) {
             Text("Android richiede la conferma dell’installazione.", style = MaterialTheme.typography.bodySmall)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Switch(checked = automatic, onCheckedChange = manager::setAutoDownload)
+            Switch(checked = automatic, onCheckedChange = manager::setAutoDownload,
+                modifier = Modifier.semantics { contentDescription = "Scarica automaticamente con Wi-Fi" })
             Text("Scarica automaticamente con Wi-Fi", modifier = Modifier.weight(1f))
         }
     }
