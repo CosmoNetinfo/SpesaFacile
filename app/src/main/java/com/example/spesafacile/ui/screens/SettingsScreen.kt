@@ -15,6 +15,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.spesafacile.BuildConfig
 import com.example.spesafacile.data.*
 import com.example.spesafacile.util.*
+import com.example.spesafacile.ui.components.UpdateControls
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
 
@@ -29,7 +32,7 @@ fun SettingsScreen(bottomBar: @Composable () -> Unit) {
     val snackbar = remember { SnackbarHostState() }
     var busy by remember { mutableStateOf(false) }
     var pending by remember { mutableStateOf<TransferDocument?>(null) }
-    var update by remember { mutableStateOf<String?>(null) }
+    var notice by remember { mutableStateOf<String?>(null) }
     fun operation(action: suspend () -> Unit) {
         scope.launch {
             busy = true
@@ -88,10 +91,11 @@ fun SettingsScreen(bottomBar: @Composable () -> Unit) {
             item { NotebookSheet { Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("SpesaFacile ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleLarge)
                 Text("Liste sul telefono, senza account. Per inviare una lista in famiglia usa il link dal pulsante Condividi.")
-                OutlinedButton(enabled = !busy, onClick = { operation {
-                    val latest = UpdateChecker.checkForUpdate()
-                    if (latest == null) snackbar.showSnackbar("Nessun aggiornamento rilevato. Se sei offline, riprova con una connessione.") else update = latest
-                } }) { Text("Cerca aggiornamenti") }
+                Text("Licenza proprietaria · © 2026 CosmoNetinfo", style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = { operation {
+                    notice = withContext(Dispatchers.IO) { context.assets.open("licenses/PROPRIETARY.txt").bufferedReader().use { it.readText() } + "\n\n" + context.assets.open("licenses/NOTICE.txt").bufferedReader().use { it.readText() } + "\n\n" + context.assets.open("licenses/APACHE-2.0.txt").bufferedReader().use { it.readText() } }
+                } }) { Text("Licenza e attribuzioni") }
+                UpdateControls(AppUpdateManager.get(context))
                 TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/CosmoNetinfo/SpesaFacile"))) }) { Text("Progetto e assistenza") }
             } } }
             if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
@@ -101,8 +105,7 @@ fun SettingsScreen(bottomBar: @Composable () -> Unit) {
         text = { Text("Aggiungerai ${document.lists.size} liste con ${document.lists.sumOf { it.items.size }} prodotti e ripristinerai ${document.products.size} prodotti abituali. Le liste esistenti non verranno sovrascritte.") },
         confirmButton = { TextButton(enabled = !busy, onClick = { operation { repository.importDocument(document); pending = null; snackbar.showSnackbar("Backup importato") } }) { Text("Importa copie") } },
         dismissButton = { TextButton(enabled = !busy, onClick = { pending = null }) { Text("Annulla") } }) }
-    update?.let { version -> AlertDialog(onDismissRequest = { update = null }, title = { Text("Disponibile $version") },
-        text = { Text("Apri GitHub per scaricare l’aggiornamento.") }, confirmButton = { TextButton(onClick = {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/CosmoNetinfo/SpesaFacile/releases/latest"))); update = null
-        }) { Text("Scarica") } }, dismissButton = { TextButton(onClick = { update = null }) { Text("Più tardi") } }) }
+    notice?.let { text -> AlertDialog(onDismissRequest = { notice = null }, title = { Text("Licenza e attribuzioni") },
+        text = { Text(text, modifier = Modifier.verticalScroll(rememberScrollState())) },
+        confirmButton = { TextButton(onClick = { notice = null }) { Text("Chiudi") } }) }
 }

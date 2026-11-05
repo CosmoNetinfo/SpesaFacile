@@ -6,7 +6,20 @@ Il progetto funziona con un database locale: per creare e consultare le liste no
 
 [Scarica l’ultima release](https://github.com/CosmoNetinfo/SpesaFacile/releases/latest) · [Landing page](https://cosmonetinfo.github.io/SpesaFacile-landing-page/) · [Segnala un problema](https://github.com/CosmoNetinfo/SpesaFacile/issues)
 
-> **Stato della versione:** questo codice contiene la **1.2.0** (`versionCode = 4`). L’APK presente in Releases può essere precedente: verifica il numero della release prima di aspettarti tutte le funzioni descritte qui. Una modifica al codice non pubblica automaticamente una nuova versione.
+> **Stato della versione:** questo codice contiene la **1.3.0** (`versionCode = 5`). L’APK presente in Releases può essere precedente: verifica il numero della release prima di aspettarti tutte le funzioni descritte qui. Una modifica al codice non pubblica automaticamente una nuova versione.
+
+## Blocco notes e struttura della versione 1.3
+
+L’app ha tre sezioni sempre raggiungibili dalla barra in basso: **Liste**, **Prodotti** e **Il mio blocco**. La grafica riprende un quaderno: carta color crema, righe leggere, margine colorato e titoli leggibili. Rimangono disponibili tema scuro e testo ingrandito.
+
+- **Prodotti abituali:** ricerca, preferiti, creazione manuale e aggiunta rapida a una lista a scelta. Riutilizzare un prodotto conserva la sua stella.
+- **Impostazioni:** aspetto automatico/chiaro/scuro, backup, importazione, licenza, assistenza e aggiornamenti.
+- **Budget:** ogni lista può avere un limite di spesa; il dettaglio confronta il totale stimato con il budget, segnalando l’importo rimanente o superato. I prezzi mancanti non sono inclusi nel totale.
+- **Backup JSON:** include liste, quantità, prezzi, budget, spunte e prodotti abituali con preferiti. L’importazione crea copie con nuovi ID e nomi distinti senza sovrascrivere le liste esistenti. Non include chiavi di firma o APK.
+- **Link per la famiglia:** dal dettaglio scegli Condividi → Invia link all’app. Il destinatario vede un’anteprima sulla landing e apre una copia in SpesaFacile 1.3+. Le informazioni sono contenute nel frammento del link, non salvate sul sito. Chi possiede il link può leggerle. Riaprire lo stesso link non duplica la copia; per inviare modifiche si condivide un nuovo collegamento. Non è una sincronizzazione in tempo reale.
+- **Aggiornamenti dall’app:** controllo automatico all’avvio; download tramite DownloadManager, recuperabile dopo la chiusura dell’app; opzione di scaricamento automatico su Wi-Fi; verifica SHA-256, identificativo, numero di versione e certificato prima dell’installazione. Android richiede l’autorizzazione a installare da SpesaFacile e una conferma dell’installazione.
+
+Il bridge delle liste condivise è ospitato nella repository della landing, nella cartella condividi/. I link hanno una dimensione massima; per liste molto grandi usa la condivisione testuale o il backup. I file importati sono validati prima di scrivere dati e i payload compressi hanno un limite di decompressione.
 
 ## Home rinnovata nella 1.2
 
@@ -46,7 +59,7 @@ Gli APK debug delle build di sviluppo si trovano negli artefatti di GitHub Actio
 
 Android richiede lo stesso identificativo applicativo, una firma compatibile e un `versionCode` crescente. Il progetto mantiene `com.example.spesafacile` per non cambiare l’identità dell’app esistente.
 
-Le prime release del repository distribuivano APK debug: la relativa chiave potrebbe non coincidere con la futura firma di produzione. **Non disinstallare l’app per risolvere un conflitto di firma se devi conservare le liste:** la disinstallazione normalmente rimuove i dati locali. Occorre prima verificare la chiave usata dall’APK installato e pianificare il passaggio. Non è presente una funzione manuale di esportazione/importazione del database.
+Le prime release del repository distribuivano APK debug: la relativa chiave potrebbe non coincidere con la futura firma di produzione. **Non disinstallare l’app per risolvere un conflitto di firma se devi conservare le liste:** la disinstallazione normalmente rimuove i dati locali. Occorre prima verificare la chiave usata dall’APK installato e pianificare il passaggio. Dalla versione 1.3 puoi esportare e importare le liste dalle impostazioni. Questa funzione non è disponibile nelle vecchie build 1.0.
 
 ## Uso quotidiano
 
@@ -74,7 +87,7 @@ Spunta un prodotto per spostarlo tra gli acquistati. Tocca l’intestazione **Ac
 
 Per eliminare un prodotto usa il cestino della riga o trascina la riga verso sinistra. La barra **Annulla** ripristina l’ultimo prodotto eliminato mentre il messaggio è visibile; non è un cestino permanente.
 
-La condivisione invia testo con nomi, quantità e stato di acquisto, aggiungendo il totale se sono presenti prezzi. Non consente ad altri di modificare in tempo reale la tua lista.
+La condivisione offre testo oppure un link con la lista. Il link include prodotti, quantità, spunte, prezzi e budget se presenti. Il destinatario apre l’anteprima e salva una copia nell’app. Le modifiche si inviano con un nuovo link, senza modificare in tempo reale le copie degli altri.
 
 ## Widget sulla schermata iniziale
 
@@ -121,6 +134,8 @@ Le schermate raccolgono i flussi rispettando il ciclo di vita Android. La home u
 ### Migrazione del database
 
 Lo schema **2** aggiunge quantità `REAL`, prezzi facoltativi e la tabella `product_suggestions`. La migrazione `1 → 2` conserva ID, appartenenza alle liste, categorie, quantità precedenti e stato degli acquistati; inizializza inoltre lo storico dai prodotti esistenti.
+
+Lo schema **3** aggiunge il budget delle liste, i preferiti dei prodotti e una tabella per riconoscere i link già importati. Le migrazioni 1 → 2 → 3 sono concatenate e conservano i dati.
 
 Non viene usata una migrazione distruttiva. Gli schemi Room vengono esportati in `app/schemas/` e vanno versionati. Per future modifiche al database aggiungi una migrazione esplicita e aggiorna i test.
 
@@ -192,8 +207,8 @@ Per compilare localmente una release firmata, imposta le variabili `SPESA_KEYSTO
 
 1. Incrementa `versionCode` e aggiorna `versionName` in `app/build.gradle.kts`.
 2. Aggiorna la documentazione e completa le verifiche CI, inclusi i test sul dispositivo.
-3. Crea un tag corrispondente esattamente alla versione, per esempio `v1.2.0`.
-4. Pubblica il tag: il workflow crea una release con `SpesaFacile-v1.2.0.apk` e `SHA256SUMS.txt`.
+3. Crea un tag corrispondente esattamente alla versione, per esempio `v1.3.0`.
+4. Pubblica il tag: il workflow crea una release con `SpesaFacile-v1.3.0.apk` e `SHA256SUMS.txt`.
 
 Non riutilizzare un tag esistente per distribuire una build diversa. Il controllo aggiornamenti legge `BuildConfig.VERSION_NAME`: non c’è una seconda costante da aggiornare manualmente.
 
@@ -205,6 +220,6 @@ La pagina promozionale è mantenuta separatamente in [SpesaFacile-landing-page](
 
 Per un bug indica versione dell’app, versione Android, dispositivo, passaggi per riprodurlo e risultato atteso. Evita di includere dati personali nelle segnalazioni pubbliche.
 
-Limiti attuali: categorie predefinite, nessuna collaborazione in tempo reale, nessun import/export manuale del database e nessuna versione iOS. La condivisione è testuale. Il tema segue Android. La firma di produzione deve essere configurata prima di distribuire la prima release firmata.
+Limiti attuali: categorie predefinite, nessuna collaborazione in tempo reale, nessuna sincronizzazione in tempo reale e nessuna versione iOS. La condivisione offre testo e link. Il tema può seguire Android oppure essere scelto nelle impostazioni. La firma di produzione deve essere configurata prima di distribuire la prima release firmata.
 
-Il repository non contiene attualmente un file `LICENSE`: la disponibilità del codice su GitHub non assegna automaticamente una licenza di riutilizzo.
+Il progetto usa una licenza proprietaria, descritta nel file LICENSE. Uso dell’app consentito per finalità personali e domestiche; codice e marchio riservati. Le dipendenze mantengono le proprie licenze e attribuzioni, incluse nell’APK.
