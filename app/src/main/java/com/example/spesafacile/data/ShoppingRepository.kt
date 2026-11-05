@@ -19,17 +19,17 @@ class ShoppingRepository(
     fun getSuggestions() = itemDao.getSuggestions()
 
     suspend fun insertList(list: ShoppingList): Long {
-        require(list.name.isNotBlank())
+        require(list.name.isNotBlank() && list.name.trim().length <= 500)
         return listDao.insert(list.copy(name = list.name.trim())).also { onChanged() }
     }
     suspend fun updateList(list: ShoppingList) {
-        require(list.name.isNotBlank())
+        require(list.name.isNotBlank() && list.name.trim().length <= 500)
         listDao.update(list.copy(name = list.name.trim()))
         onChanged()
     }
     suspend fun deleteList(list: ShoppingList) { listDao.delete(list); onChanged() }
     suspend fun saveItem(item: ShoppingItem) {
-        require(item.name.isNotBlank())
+        require(item.name.isNotBlank() && item.name.trim().length <= 500 && item.unit.length <= 20)
         require(item.quantity.isFinite() && item.quantity > 0 && item.quantity <= 1_000_000)
         require(item.priceCents == null || item.priceCents in 0..100_000_000L)
         require(Category.entries.any { it.name == item.category })

@@ -73,7 +73,7 @@ private fun ProductForm(initial: ShoppingItem, suggestions: List<ProductSuggesti
     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) {
-                OutlinedTextField(value = name, onValueChange = { name = it; showSuggestions = true },
+                OutlinedTextField(value = name, onValueChange = { name = it.take(500); showSuggestions = true },
                     label = { Text("Prodotto") }, singleLine = true, enabled = !saving,
                     modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),

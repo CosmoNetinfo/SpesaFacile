@@ -51,7 +51,7 @@ fun ListsScreen(onListClick: (Int) -> Unit, viewModel: ListsViewModel = viewMode
 private fun ListNameDialog(title: String, initial: String, dismiss: () -> Unit, confirm: (String) -> Unit) {
     var name by rememberSaveable { mutableStateOf(initial) }
     AlertDialog(onDismissRequest = dismiss, title = { Text(title) },
-        text = { OutlinedTextField(name, onValueChange = { name = it }, label = { Text("Nome della lista") }, singleLine = true) },
+        text = { OutlinedTextField(name, onValueChange = { name = it.take(500) }, label = { Text("Nome della lista") }, singleLine = true) },
         confirmButton = { TextButton(onClick = { confirm(name.trim()) }, enabled = name.isNotBlank()) { Text("Salva") } },
         dismissButton = { TextButton(onClick = dismiss) { Text("Annulla") } })
 }
