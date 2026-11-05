@@ -5,13 +5,15 @@ import android.os.ParcelFileDescriptor
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 
-fun saveNotebookPreview(compose: ComposeContentTestRule, name: String) {
+fun saveNotebookPreview(compose: ComposeContentTestRule, name: String, dialog: Boolean = false) {
     compose.waitForIdle()
-    val image = compose.onRoot().captureToImage().asAndroidBitmap()
+    val node = if (dialog) compose.onNode(isDialog()) else compose.onRoot()
+    val image = node.captureToImage().asAndroidBitmap()
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     val directory = checkNotNull(instrumentation.targetContext.getExternalFilesDir("home-screenshots"))
     directory.mkdirs()

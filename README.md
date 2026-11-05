@@ -6,7 +6,11 @@ Il progetto funziona con un database locale: per creare e consultare le liste no
 
 [Scarica l’ultima release](https://github.com/CosmoNetinfo/SpesaFacile/releases/latest) · [Landing page](https://cosmonetinfo.github.io/SpesaFacile-landing-page/) · [Segnala un problema](https://github.com/CosmoNetinfo/SpesaFacile/issues)
 
-> **Stato della versione:** questo codice contiene la **1.3.0** (`versionCode = 5`). L’APK presente in Releases può essere precedente: verifica il numero della release prima di aspettarti tutte le funzioni descritte qui. Una modifica al codice non pubblica automaticamente una nuova versione.
+> **Stato della versione:** questo codice contiene la **1.3.1** (`versionCode = 6`). L’APK presente in Releases può essere precedente: verifica il numero della release prima di aspettarti tutte le funzioni descritte qui. Una modifica al codice non pubblica automaticamente una nuova versione.
+
+## Correzioni della versione 1.3.1
+
+Finestre di creazione, menu e selettori usano ora le superfici color carta o marrone del tema, con titoli serif e angoli coerenti con il blocco notes. La palette include tutti i livelli delle superfici Material 3, anche quelli usati dai popup.
 
 ## Blocco notes e struttura della versione 1.3
 
@@ -207,8 +211,8 @@ Per compilare localmente una release firmata, imposta le variabili `SPESA_KEYSTO
 
 1. Incrementa `versionCode` e aggiorna `versionName` in `app/build.gradle.kts`.
 2. Aggiorna la documentazione e completa le verifiche CI, inclusi i test sul dispositivo.
-3. Crea un tag corrispondente esattamente alla versione, per esempio `v1.3.0`.
-4. Pubblica il tag: il workflow crea una release con `SpesaFacile-v1.3.0.apk` e `SHA256SUMS.txt`.
+3. Crea un tag corrispondente esattamente alla versione, per esempio `v1.3.1`.
+4. Pubblica il tag: il workflow crea una release con `SpesaFacile-v1.3.1.apk` e `SHA256SUMS.txt`.
 
 Non riutilizzare un tag esistente per distribuire una build diversa. Il controllo aggiornamenti legge `BuildConfig.VERSION_NAME`: non c’è una seconda costante da aggiornare manualmente.
 
