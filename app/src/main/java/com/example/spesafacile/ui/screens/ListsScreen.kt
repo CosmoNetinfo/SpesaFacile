@@ -13,7 +13,7 @@ import com.example.spesafacile.util.UpdateChecker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ListsScreen(onListClick: (Int) -> Unit, viewModel: ListsViewModel = viewModel()) {
+fun ListsScreen(onListClick: (Int) -> Unit, viewModel: ListsViewModel = viewModel(), bottomBar: @Composable () -> Unit = {}) {
     val lists by viewModel.allLists.collectAsStateWithLifecycle()
     var createDialog by rememberSaveable { mutableStateOf(false) }
     var renameId by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -30,7 +30,8 @@ fun ListsScreen(onListClick: (Int) -> Unit, viewModel: ListsViewModel = viewMode
         onRename = { renameId = it },
         onDuplicate = { viewModel.duplicateList(it.asList()) },
         onDelete = { deleteId = it },
-        snackbar = snackbar
+        snackbar = snackbar,
+        bottomBar = bottomBar
     )
     if (createDialog) ListNameDialog("Nuova lista", "", { createDialog = false }) {
         viewModel.addList(it); createDialog = false

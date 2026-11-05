@@ -24,6 +24,11 @@ import com.example.spesafacile.data.model.*
 import com.example.spesafacile.ui.components.*
 import com.example.spesafacile.ui.viewmodel.*
 import com.example.spesafacile.util.ShoppingValues
+import com.example.spesafacile.util.TransferCodec
+import com.example.spesafacile.util.TransferList
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import java.math.BigDecimal
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,6 +53,15 @@ fun ShoppingScreen(listId: Int, onBack: () -> Unit, focusAdd: Boolean = false) {
     var saving by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var shareMenu by remember { mutableStateOf(false) }
+    var optionsMenu by remember { mutableStateOf(false) }
+    var budgetDialog by remember { mutableStateOf(false) }
+    fun shareText(text: String) {
+        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text)
+        }, "Condividi lista"))
+    }
     val unchecked = items.filter { !it.isChecked }
     val checked = items.filter { it.isChecked }
     LaunchedEffect(model) {
@@ -75,15 +89,29 @@ fun ShoppingScreen(listId: Int, onBack: () -> Unit, focusAdd: Boolean = false) {
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Indietro") } },
             actions = {
                 IconButton(onClick = model::toggleGrouped) { Icon(if (grouped) Icons.Default.ViewList else Icons.Default.Category, if (grouped) "Vista lista" else "Raggruppa per categoria") }
-                IconButton(onClick = {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, ShoppingValues.shareText(list?.name ?: "Spesa", items))
+                Box {
+                    IconButton(onClick = { shareMenu = true }, enabled = list != null) { Icon(Icons.Default.Share, "Condividi lista") }
+                    DropdownMenu(shareMenu, onDismissRequest = { shareMenu = false }) {
+                        DropdownMenuItem(text = { Text("Invia link all’app") }, onClick = {
+                            shareMenu = false
+                            scope.launch {
+                                try {
+                                    val link = TransferCodec.share(TransferList(list?.name ?: "Spesa", list?.budgetCents, items))
+                                    shareText("Apri la lista della spesa in SpesaFacile:\n$link")
+                                } catch (_: IllegalArgumentException) { snackbar.showSnackbar("Lista troppo lunga per un link. Usa la condivisione come testo.") }
+                            }
+                        })
+                        DropdownMenuItem(text = { Text("Invia come testo") }, onClick = {
+                            shareMenu = false; shareText(ShoppingValues.shareText(list?.name ?: "Spesa", items))
+                        })
                     }
-                    context.startActivity(Intent.createChooser(intent, "Condividi lista"))
-                }, enabled = list != null) { Icon(Icons.Default.Share, "Condividi lista") }
-                IconButton(onClick = { clearDialog = true }, enabled = checked.isNotEmpty()) {
-                    Icon(Icons.Default.DeleteSweep, "Svuota acquistati")
+                }
+                Box {
+                    IconButton(onClick = { optionsMenu = true }) { Icon(Icons.Default.MoreVert, "Opzioni della lista") }
+                    DropdownMenu(optionsMenu, onDismissRequest = { optionsMenu = false }) {
+                        DropdownMenuItem(text = { Text("Imposta budget") }, onClick = { optionsMenu = false; budgetDialog = true })
+                        DropdownMenuItem(text = { Text("Svuota acquistati") }, enabled = checked.isNotEmpty(), onClick = { optionsMenu = false; clearDialog = true })
+                    }
                 }
             })
     }) { padding ->
@@ -97,6 +125,17 @@ fun ShoppingScreen(listId: Int, onBack: () -> Unit, focusAdd: Boolean = false) {
                 Text("Totale stimato: ${ShoppingValues.money(ShoppingValues.totalCents(items))}" +
                     if (items.any { it.priceCents == null }) " · alcuni prezzi mancanti" else "",
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium)
+            }
+            list?.budgetCents?.let { budget ->
+                val total = ShoppingValues.totalCents(items)
+                val difference = budget - total
+                Text("Budget: "+ShoppingValues.money(budget)+" · "+
+                    (if (difference >= 0) "Rimangono "+ShoppingValues.money(difference) else "Oltre di "+ShoppingValues.money(-difference)),
+                    Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    color = if (difference < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium)
+                LinearProgressIndicator(progress = { if (budget > 0) (total.toFloat() / budget).coerceIn(0f, 1f) else if (total > 0) 1f else 0f },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
             }
             if (items.isEmpty()) {
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) { Text("Aggiungi il primo prodotto") }
@@ -133,6 +172,17 @@ fun ShoppingScreen(listId: Int, onBack: () -> Unit, focusAdd: Boolean = false) {
     }
     items.firstOrNull { it.id == editId }?.let { item ->
         ProductEditor(item, saving, { editId = null }) { saving = true; model.saveItem(it) }
+    }
+    if (budgetDialog) {
+        var amount by remember(list?.budgetCents) { mutableStateOf(list?.budgetCents?.let { BigDecimal.valueOf(it, 2).toPlainString().replace('.', ',') } ?: "") }
+        val cents = ShoppingValues.parsePriceCents(amount)
+        AlertDialog(onDismissRequest = { budgetDialog = false }, title = { Text("Budget della lista") },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(amount, onValueChange = { amount = it }, label = { Text("Quanto vuoi spendere (€)?") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), isError = amount.isNotBlank() && cents == null)
+                Text("Il confronto usa i prezzi inseriti. I prodotti senza prezzo non sono inclusi nel totale.")
+            } }, confirmButton = { TextButton(onClick = { model.setBudget(cents); budgetDialog = false }, enabled = amount.isBlank() || cents != null) { Text("Salva") } },
+            dismissButton = { TextButton(onClick = { model.setBudget(null); budgetDialog = false }) { Text("Rimuovi budget") } })
     }
     if (clearDialog) AlertDialog(onDismissRequest = { clearDialog = false },
         title = { Text("Eliminare gli acquistati?") },

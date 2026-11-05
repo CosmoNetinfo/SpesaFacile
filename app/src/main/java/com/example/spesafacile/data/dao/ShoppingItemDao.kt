@@ -18,11 +18,17 @@ interface ShoppingItemDao {
     @Query("SELECT COUNT(*) FROM shopping_items WHERE listId = :listId AND isChecked = 0")
     fun getUncheckedCount(listId: Int): Flow<Int>
 
-    @Query("SELECT * FROM product_suggestions ORDER BY lastUsedAt DESC, name ASC")
+    @Query("SELECT * FROM product_suggestions ORDER BY isFavorite DESC, lastUsedAt DESC, name ASC")
     fun getSuggestions(): Flow<List<ProductSuggestion>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveSuggestion(suggestion: ProductSuggestion)
+
+    @Query("SELECT * FROM product_suggestions WHERE normalizedName = :key")
+    suspend fun getSuggestion(key: String): ProductSuggestion?
+
+    @Query("UPDATE product_suggestions SET isFavorite = :favorite WHERE normalizedName = :key")
+    suspend fun setFavorite(key: String, favorite: Boolean)
 
     @Query("SELECT * FROM shopping_items WHERE listId = :listId ORDER BY createdAt, id")
     suspend fun snapshot(listId: Int): List<ShoppingItem>
