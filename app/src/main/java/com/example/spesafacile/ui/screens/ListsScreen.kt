@@ -18,11 +18,8 @@ fun ListsScreen(onListClick: (Int) -> Unit, viewModel: ListsViewModel = viewMode
     var createDialog by rememberSaveable { mutableStateOf(false) }
     var renameId by rememberSaveable { mutableStateOf<Int?>(null) }
     var deleteId by rememberSaveable { mutableStateOf<Int?>(null) }
-    var version by rememberSaveable { mutableStateOf<String?>(null) }
     val snackbar = remember { SnackbarHostState() }
-    val context = LocalContext.current
     LaunchedEffect(viewModel) { viewModel.errors.collect { snackbar.showSnackbar(it) } }
-    LaunchedEffect(Unit) { version = UpdateChecker.checkForUpdate() }
     ListsHome(
         lists = lists,
         onListClick = onListClick,
@@ -47,22 +44,14 @@ fun ListsScreen(onListClick: (Int) -> Unit, viewModel: ListsViewModel = viewMode
             confirmButton = { TextButton(onClick = { viewModel.deleteList(summary.asList()); deleteId = null }) { Text("Elimina") } },
             dismissButton = { TextButton(onClick = { deleteId = null }) { Text("Annulla") } })
     }
-    version?.let { tag ->
-        AlertDialog(onDismissRequest = { version = null }, title = { Text("Aggiornamento disponibile") },
-            text = { Text("È disponibile SpesaFacile $tag.") },
-            confirmButton = { TextButton(onClick = {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/CosmoNetinfo/SpesaFacile/releases/latest")))
-                version = null
-            }) { Text("Scarica") } },
-            dismissButton = { TextButton(onClick = { version = null }) { Text("Più tardi") } })
-    }
+
 }
 
 @Composable
 private fun ListNameDialog(title: String, initial: String, dismiss: () -> Unit, confirm: (String) -> Unit) {
     var name by rememberSaveable { mutableStateOf(initial) }
     AlertDialog(onDismissRequest = dismiss, title = { Text(title) },
-        text = { OutlinedTextField(name, onValueChange = { name = it }, label = { Text("Nome della lista") }, singleLine = true) },
+        text = { OutlinedTextField(name, onValueChange = { name = it.take(500) }, label = { Text("Nome della lista") }, singleLine = true) },
         confirmButton = { TextButton(onClick = { confirm(name.trim()) }, enabled = name.isNotBlank()) { Text("Salva") } },
         dismissButton = { TextButton(onClick = dismiss) { Text("Annulla") } })
 }

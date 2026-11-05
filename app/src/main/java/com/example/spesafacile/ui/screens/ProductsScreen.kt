@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -30,7 +31,7 @@ fun ProductsScreen(bottomBar: @Composable () -> Unit, onGoToLists: () -> Unit, m
     val visible = products.filter { (!favorites || it.isFavorite) && it.name.contains(query.trim(), ignoreCase = true) }
     Scaffold(bottomBar = bottomBar, snackbarHost = { SnackbarHost(snackbar) },
         topBar = { TopAppBar(title = { Text("Prodotti abituali") }) },
-        floatingActionButton = { ExtendedFloatingActionButton(onClick = { newProduct = true }, icon = { Icon(Icons.Outlined.Add, null) }, text = { Text("Nuovo prodotto") }) }) { padding ->
+        floatingActionButton = { ExtendedFloatingActionButton(onClick = { newProduct = true }, modifier = Modifier.testTag("new-product"), icon = { Icon(Icons.Outlined.Add, null) }, text = { Text("Nuovo prodotto") }) }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp, 12.dp, 20.dp, 100.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Text("Il tuo piccolo promemoria", style = MaterialTheme.typography.headlineSmall)

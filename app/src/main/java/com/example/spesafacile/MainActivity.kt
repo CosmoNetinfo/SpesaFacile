@@ -13,6 +13,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.spesafacile.data.AppPreferences
 import com.example.spesafacile.data.Appearance
+import com.example.spesafacile.ui.components.UpdatePrompt
 import com.example.spesafacile.theme.SpesaFacileTheme
 import com.example.spesafacile.ui.navigation.SpesaFacileNavGraph
 
@@ -34,6 +35,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     SpesaFacileNavGraph()
+                    UpdatePrompt()
                 }
             }
         }

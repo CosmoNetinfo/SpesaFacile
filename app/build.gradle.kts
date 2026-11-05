@@ -46,7 +46,8 @@ android {
 
     packaging {
       resources {
-        excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        merges += "/META-INF/AL2.0"
+        merges += "/META-INF/LGPL2.1"
       }
     }
 }
