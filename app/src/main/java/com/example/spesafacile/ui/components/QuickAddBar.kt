@@ -25,7 +25,8 @@ import com.example.spesafacile.util.ShoppingValues
 @Composable
 fun QuickAddBar(listId: Int, suggestions: List<ProductSuggestion>, focusAdd: Boolean, saving: Boolean,
                 onSave: (ShoppingItem) -> Unit) {
-    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Box(Modifier.heightIn(max = 340.dp).verticalScroll(rememberScrollState())) {
             ProductForm(ShoppingItem(listId = listId, name = ""), suggestions, focusAdd, saving, true, onSave)
         }

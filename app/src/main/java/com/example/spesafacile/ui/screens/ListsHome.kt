@@ -148,18 +148,15 @@ private fun SummaryValue(value: String, label: String, modifier: Modifier) {
 private fun FirstListCard(onCreate: () -> Unit) {
     NotebookSheet {
         Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)) {
-                Icon(Icons.Outlined.PlaylistAdd, null, Modifier.padding(16.dp).size(32.dp), tint = MaterialTheme.colorScheme.primary)
+            Button(onClick = onCreate, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                Icon(Icons.Outlined.Add, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Crea la tua prima lista")
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("La prima lista è un buon inizio.", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                 Text("Spesa della settimana, cena con amici o due cose al volo. Scegli un nome e parti da lì.",
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Button(onClick = onCreate, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                Icon(Icons.Outlined.Add, null)
-                Spacer(Modifier.width(8.dp))
-                Text("Crea la tua prima lista")
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(Icons.Outlined.CheckCircle, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)

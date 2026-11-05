@@ -31,7 +31,7 @@ fun ProductsScreen(bottomBar: @Composable () -> Unit, onGoToLists: () -> Unit, m
     val visible = products.filter { (!favorites || it.isFavorite) && it.name.contains(query.trim(), ignoreCase = true) }
     Scaffold(bottomBar = bottomBar, snackbarHost = { SnackbarHost(snackbar) },
         topBar = { TopAppBar(title = { Text("Prodotti abituali") }) },
-        floatingActionButton = { ExtendedFloatingActionButton(onClick = { newProduct = true }, modifier = Modifier.testTag("new-product"), icon = { Icon(Icons.Outlined.Add, null) }, text = { Text("Nuovo prodotto") }) }) { padding ->
+        floatingActionButton = { if (products.isNotEmpty()) ExtendedFloatingActionButton(onClick = { newProduct = true }, modifier = Modifier.testTag("new-product"), icon = { Icon(Icons.Outlined.Add, null) }, text = { Text("Nuovo prodotto") }) }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp, 12.dp, 20.dp, 100.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Text("Il tuo piccolo promemoria", style = MaterialTheme.typography.headlineSmall)
@@ -45,6 +45,11 @@ fun ProductsScreen(bottomBar: @Composable () -> Unit, onGoToLists: () -> Unit, m
             if (visible.isEmpty()) item {
                 NotebookSheet(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (products.isEmpty()) Button(onClick = { newProduct = true }, modifier = Modifier.fillMaxWidth().testTag("new-product")) {
+                            Icon(Icons.Outlined.Add, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Nuovo prodotto")
+                        }
                         Icon(Icons.Outlined.Inventory2, null, Modifier.size(40.dp), tint = MaterialTheme.colorScheme.primary)
                         Text(if (products.isEmpty()) "Le buone abitudini cominciano qui." else "Nessun prodotto trovato.", style = MaterialTheme.typography.titleMedium)
                         Text(if (products.isEmpty()) "Aggiungi un prodotto o compilalo in una lista: lo ritroverai qui. La stella lo tiene tra i preferiti." else "Prova un altro nome o cambia filtro.")
