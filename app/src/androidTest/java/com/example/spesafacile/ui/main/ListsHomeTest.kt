@@ -1,6 +1,7 @@
 package com.example.spesafacile.ui.main
 
 import android.graphics.Bitmap
+import android.os.ParcelFileDescriptor
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -79,6 +80,12 @@ class ListsHomeTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val directory = checkNotNull(context.getExternalFilesDir("home-screenshots"))
         directory.mkdirs()
-        File(directory, "$name.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val file = File(directory, "$name.png")
+        file.outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        // Gradle uninstalls the test app after execution: retain previews outside its data directory.
+        val command = "mkdir -p /data/local/tmp/spesafacile-home && cp ${file.absolutePath} /data/local/tmp/spesafacile-home/$name.png && echo copied"
+        val descriptor = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+        val result = ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.bufferedReader().readText() }
+        check(result.contains("copied")) { "Unable to retain home preview" }
     }
 }

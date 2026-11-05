@@ -64,7 +64,7 @@ jobs:
           disable-animations: true
           script: |
             ./gradlew connectedDebugAndroidTest
-            adb pull /sdcard/Android/data/com.example.spesafacile/files/home-screenshots app/build/outputs/home-screenshots
+            adb pull /data/local/tmp/spesafacile-home app/build/outputs/home-screenshots
       - uses: actions/upload-artifact@v4
         if: always()
         with:
