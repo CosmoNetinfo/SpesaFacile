@@ -36,7 +36,7 @@ jobs:
           echo "SPESA_KEYSTORE_PATH=$RUNNER_TEMP/spesa-release.jks" >> "$GITHUB_ENV"
       - run: chmod +x gradlew
       - name: Test and build signed APK
-        run: ./gradlew testReleaseUnitTest lintRelease assembleRelease
+        run: ./gradlew testDebugUnitTest lintRelease assembleRelease
       - name: Verify signature and prepare artifact
         run: |
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose app/build/outputs/apk/release/app-release.apk
@@ -51,4 +51,3 @@ jobs:
       - name: Remove signing material
         if: always()
         run: rm -f "$RUNNER_TEMP/spesa-release.jks"
-
