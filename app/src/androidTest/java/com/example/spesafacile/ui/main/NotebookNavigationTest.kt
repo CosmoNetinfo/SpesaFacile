@@ -15,9 +15,12 @@ class NotebookNavigationTest {
         compose.waitUntil(10000) { compose.onAllNodesWithTag("home-list").fetchSemanticsNodes().isNotEmpty() }
         saveNotebookPreview(compose, "notebook-home")
         compose.onNodeWithText("Prodotti", useUnmergedTree = true).performClick()
+        compose.waitUntil(10000) { compose.onAllNodesWithTag("new-product").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Prodotti abituali").assertExists()
-        compose.onNodeWithText("Nuovo prodotto").assertExists()
         saveNotebookPreview(compose, "notebook-products")
+        compose.onNodeWithTag("new-product").performClick()
+        compose.onNodeWithText("Nuovo prodotto abituale").assertExists()
+        compose.onNodeWithText("Annulla").performClick()
         compose.onNodeWithText("Il mio blocco", useUnmergedTree = true).performClick()
         compose.onNodeWithText("Come lo preferisci?").assertExists()
         compose.onNodeWithText("Come il dispositivo").assertExists()

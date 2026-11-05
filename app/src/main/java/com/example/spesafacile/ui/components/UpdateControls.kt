@@ -20,6 +20,7 @@ import com.example.spesafacile.util.AppUpdateManager
 fun UpdateControls(manager: AppUpdateManager) {
     val context = LocalContext.current
     val state by manager.state.collectAsStateWithLifecycle()
+    val progress = state.progress
     val automatic by manager.autoDownload.collectAsStateWithLifecycle()
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (context.packageManager.canRequestPackageInstalls()) manager.install()
@@ -27,7 +28,7 @@ fun UpdateControls(manager: AppUpdateManager) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(state.message.ifEmpty { "Controllo automatico all’avvio. Puoi cercare anche manualmente." })
         if (state.downloading) {
-            if (state.progress != null) LinearProgressIndicator(progress = { state.progress!! }, modifier = Modifier.fillMaxWidth())
+            if (progress != null) LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
             else LinearProgressIndicator(Modifier.fillMaxWidth())
         }
         OutlinedButton(onClick = manager::check, enabled = !state.checking && !state.downloading) { Text("Cerca aggiornamenti") }
