@@ -83,9 +83,13 @@ class ListsHomeTest {
         val file = File(directory, "$name.png")
         file.outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
         // Gradle uninstalls the test app after execution: retain previews outside its data directory.
-        val command = "mkdir -p /data/local/tmp/spesafacile-home && cp ${file.absolutePath} /data/local/tmp/spesafacile-home/$name.png && echo copied"
-        val descriptor = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
-        val result = ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.bufferedReader().readText() }
-        check(result.contains("copied")) { "Unable to retain home preview" }
+        fun shell(command: String): String {
+            val descriptor = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+            return ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.bufferedReader().readText() }
+        }
+        shell("mkdir -p /data/local/tmp/spesafacile-home")
+        shell("cp ${file.absolutePath} /data/local/tmp/spesafacile-home/$name.png")
+        val result = shell("ls /data/local/tmp/spesafacile-home/$name.png")
+        check(result.contains("$name.png")) { "Unable to retain home preview: $result" }
     }
 }
