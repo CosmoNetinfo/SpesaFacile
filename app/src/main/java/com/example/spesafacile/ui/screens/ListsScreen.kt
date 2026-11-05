@@ -2,19 +2,10 @@ package com.example.spesafacile.ui.screens
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.spesafacile.ui.viewmodel.ListsViewModel
@@ -32,40 +23,15 @@ fun ListsScreen(onListClick: (Int) -> Unit, viewModel: ListsViewModel = viewMode
     val context = LocalContext.current
     LaunchedEffect(viewModel) { viewModel.errors.collect { snackbar.showSnackbar(it) } }
     LaunchedEffect(Unit) { version = UpdateChecker.checkForUpdate() }
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) },
-        topBar = { TopAppBar(title = { Text("Le mie liste") }) },
-        floatingActionButton = { FloatingActionButton(onClick = { createDialog = true }) { Icon(Icons.Default.Add, "Nuova lista") } }) { padding ->
-        when {
-            lists == null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            lists!!.isEmpty() -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { Text("Tocca + per creare la tua prima lista") }
-            else -> LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(lists.orEmpty(), key = { it.id }) { summary ->
-                    var menu by remember { mutableStateOf(false) }
-                    ElevatedCard(Modifier.fillMaxWidth().clickable { onListClick(summary.id) }) {
-                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(summary.name, style = MaterialTheme.typography.titleLarge)
-                                Text(when {
-                                    summary.totalCount == 0 -> "Lista vuota"
-                                    summary.uncheckedCount == 0 -> "Tutto acquistato!"
-                                    summary.uncheckedCount == 1 -> "1 prodotto da comprare"
-                                    else -> "${summary.uncheckedCount} prodotti da comprare"
-                                }, style = MaterialTheme.typography.bodyMedium)
-                            }
-                            Box {
-                                IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Opzioni ${summary.name}") }
-                                DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                                    DropdownMenuItem(text = { Text("Rinomina") }, onClick = { menu = false; renameId = summary.id })
-                                    DropdownMenuItem(text = { Text("Duplica") }, onClick = { menu = false; viewModel.duplicateList(summary.asList()) })
-                                    DropdownMenuItem(text = { Text("Elimina", color = MaterialTheme.colorScheme.error) }, onClick = { menu = false; deleteId = summary.id })
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    ListsHome(
+        lists = lists,
+        onListClick = onListClick,
+        onCreate = { createDialog = true },
+        onRename = { renameId = it },
+        onDuplicate = { viewModel.duplicateList(it.asList()) },
+        onDelete = { deleteId = it },
+        snackbar = snackbar
+    )
     if (createDialog) ListNameDialog("Nuova lista", "", { createDialog = false }) {
         viewModel.addList(it); createDialog = false
     }
