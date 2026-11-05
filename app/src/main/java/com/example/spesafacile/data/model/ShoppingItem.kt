@@ -20,8 +20,9 @@ data class ShoppingItem(
     val listId: Int,
     val name: String,
     val category: String = Category.ALTRO.name,
-    val quantity: Int = 1,
+    val quantity: Double = 1.0,
     val unit: String = "",
+    val priceCents: Long? = null,
     val isChecked: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )

@@ -27,17 +27,19 @@ fun SpesaFacileNavGraph() {
         }
 
         composable(
-            route = "shopping/{listId}",
+            route = "shopping/{listId}?add={add}",
             arguments = listOf(
-                navArgument("listId") { type = NavType.IntType }
+                navArgument("listId") { type = NavType.IntType },
+                navArgument("add") { type = NavType.BoolType; defaultValue = false }
             ),
             deepLinks = listOf(
-                navDeepLink { uriPattern = "spesafacile://shopping/{listId}" }
+                navDeepLink { uriPattern = "spesafacile://shopping/{listId}?add={add}" }
             )
         ) { backStackEntry ->
             val listId = backStackEntry.arguments?.getInt("listId") ?: return@composable
             ShoppingScreen(
                 listId = listId,
+                focusAdd = backStackEntry.arguments?.getBoolean("add") == true,
                 onBack = { navController.popBackStack() }
             )
         }

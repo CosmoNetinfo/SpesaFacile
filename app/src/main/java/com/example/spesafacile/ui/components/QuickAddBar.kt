@@ -1,221 +1,137 @@
 package com.example.spesafacile.ui.components
 
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Remove
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
-import com.example.spesafacile.data.model.Category
+import com.example.spesafacile.data.model.*
+import com.example.spesafacile.util.ShoppingValues
 
 @Composable
-fun QuickAddBar(
-    allItemNames: List<String>,
-    onAdd: (name: String, category: String, quantity: Int, unit: String) -> Unit
-) {
-    var name by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(Category.ALTRO) }
-    var quantity by remember { mutableIntStateOf(1) }
-    var selectedUnit by remember { mutableStateOf("") }
-    var showSuggestions by remember { mutableStateOf(false) }
-
-    val units = listOf("pz", "kg", "g", "l", "ml")
-
-    val filteredSuggestions = remember(name, allItemNames) {
-        if (name.length >= 2) {
-            allItemNames.filter { it.contains(name, ignoreCase = true) }.take(5)
-        } else {
-            emptyList()
+fun QuickAddBar(listId: Int, suggestions: List<ProductSuggestion>, focusAdd: Boolean, saving: Boolean,
+                onSave: (ShoppingItem) -> Unit) {
+    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Box(Modifier.heightIn(max = 340.dp).verticalScroll(rememberScrollState())) {
+            ProductForm(ShoppingItem(listId = listId, name = ""), suggestions, focusAdd, saving, true, onSave)
         }
     }
+}
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-        ) {
-            // Campo di testo con suggerimenti
-            OutlinedTextField(
-                value = name,
-                onValueChange = {
-                    name = it
-                    showSuggestions = it.length >= 2 && filteredSuggestions.isNotEmpty()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Aggiungi prodotto...") },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.Add,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium
-            )
+@Composable
+fun ProductEditor(item: ShoppingItem, saving: Boolean, onDismiss: () -> Unit, onSave: (ShoppingItem) -> Unit) {
+    AlertDialog(onDismissRequest = { if (!saving) onDismiss() },
+        title = { Text("Modifica prodotto") },
+        text = { Column(Modifier.verticalScroll(rememberScrollState())) {
+            ProductForm(item, emptyList(), false, saving, false, onSave)
+        } },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !saving) { Text("Annulla") } })
+}
 
-            // Menu suggerimenti
-            DropdownMenu(
-                expanded = showSuggestions && filteredSuggestions.isNotEmpty(),
-                onDismissRequest = { showSuggestions = false },
-                properties = PopupProperties(focusable = false)
-            ) {
-                filteredSuggestions.forEach { suggestion ->
-                    DropdownMenuItem(
-                        text = { Text(suggestion) },
-                        onClick = {
-                            name = suggestion
+@Composable
+private fun ProductForm(initial: ShoppingItem, suggestions: List<ProductSuggestion>, focusAdd: Boolean,
+                        saving: Boolean, compact: Boolean, onSave: (ShoppingItem) -> Unit) {
+    var name by rememberSaveable { mutableStateOf(initial.name) }
+    var category by rememberSaveable { mutableStateOf(initial.category) }
+    var quantity by rememberSaveable { mutableStateOf(ShoppingValues.quantity(initial.quantity)) }
+    var unit by rememberSaveable { mutableStateOf(initial.unit) }
+    var price by rememberSaveable { mutableStateOf(initial.priceCents?.let { java.math.BigDecimal.valueOf(it, 2).toPlainString().replace('.', ',') } ?: "") }
+    var expanded by rememberSaveable { mutableStateOf(!compact) }
+    var showSuggestions by remember { mutableStateOf(false) }
+    var unitMenu by remember { mutableStateOf(false) }
+    var categoryMenu by remember { mutableStateOf(false) }
+    var focusConsumed by rememberSaveable { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(focusAdd) {
+        if (focusAdd && !focusConsumed) { focusRequester.requestFocus(); focusConsumed = true }
+    }
+    val parsedQuantity = ShoppingValues.parseQuantity(quantity)
+    val parsedPrice = ShoppingValues.parsePriceCents(price)
+    val valid = name.isNotBlank() && parsedQuantity != null && (price.isBlank() || parsedPrice != null)
+    val submit = {
+        if (valid && !saving) onSave(initial.copy(name = name, category = category,
+            quantity = parsedQuantity!!, unit = unit, priceCents = parsedPrice))
+    }
+    val matches = if (showSuggestions && name.trim().length >= 2) suggestions
+        .filter { it.name.contains(name.trim(), ignoreCase = true) }.take(5) else emptyList()
+
+    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) {
+                OutlinedTextField(value = name, onValueChange = { name = it; showSuggestions = true },
+                    label = { Text("Prodotto") }, singleLine = true, enabled = !saving,
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { submit() }))
+                DropdownMenu(expanded = matches.isNotEmpty(), onDismissRequest = { showSuggestions = false },
+                    properties = androidx.compose.ui.window.PopupProperties(focusable = false)) {
+                    matches.forEach { suggestion ->
+                        DropdownMenuItem(text = { Text(suggestion.name) }, onClick = {
+                            name = suggestion.name; category = suggestion.category; unit = suggestion.unit
                             showSuggestions = false
+                        })
+                    }
+                }
+            }
+            if (compact) {
+                IconButton(onClick = { submit() }, enabled = valid && !saving) {
+                    Icon(Icons.Default.Add, "Aggiungi prodotto")
+                }
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        if (expanded) "Nascondi dettagli" else "Quantità, categoria e prezzo")
+                }
+            }
+        }
+        if (expanded) {
+            Box {
+                OutlinedButton(onClick = { categoryMenu = true }, modifier = Modifier.fillMaxWidth(), enabled = !saving) {
+                    Text(Category.entries.firstOrNull { it.name == category }?.displayName ?: "Altro")
+                }
+                DropdownMenu(expanded = categoryMenu, onDismissRequest = { categoryMenu = false }) {
+                    Category.entries.forEach { value ->
+                        DropdownMenuItem(text = { Text(value.displayName) }, onClick = { category = value.name; categoryMenu = false })
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = quantity, onValueChange = { quantity = it }, label = { Text("Quantità") },
+                    isError = parsedQuantity == null, enabled = !saving, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
+                Box(Modifier.weight(1f)) {
+                    OutlinedButton(onClick = { unitMenu = true }, modifier = Modifier.fillMaxWidth(), enabled = !saving) {
+                        Text(unit.ifEmpty { "Unità" })
+                    }
+                    DropdownMenu(expanded = unitMenu, onDismissRequest = { unitMenu = false }) {
+                        listOf("", "pz", "kg", "g", "l", "ml").forEach { value ->
+                            DropdownMenuItem(text = { Text(value.ifEmpty { "Nessuna" }) }, onClick = { unit = value; unitMenu = false })
                         }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Riga categorie scorrevole
-            Text(
-                text = "Categoria",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Category.entries.forEach { category ->
-                    FilterChip(
-                        selected = selectedCategory == category,
-                        onClick = { selectedCategory = category },
-                        label = { Text(category.displayName, style = MaterialTheme.typography.labelSmall) },
-                        leadingIcon = {
-                            Icon(
-                                category.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = getCategoryColor(category.name).copy(alpha = 0.2f),
-                            selectedLabelColor = getCategoryColor(category.name)
-                        )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Selettore quantità e unità
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Quantità
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Qtà:",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { if (quantity > 1) quantity-- },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(Icons.Outlined.Remove, contentDescription = "Diminuisci", modifier = Modifier.size(18.dp))
-                    }
-                    Text(
-                        text = "$quantity",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    IconButton(
-                        onClick = { quantity++ },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(Icons.Outlined.Add, contentDescription = "Aumenta", modifier = Modifier.size(18.dp))
-                    }
-                }
-
-                // Unità
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    units.forEach { unit ->
-                        FilterChip(
-                            selected = selectedUnit == unit,
-                            onClick = {
-                                selectedUnit = if (selectedUnit == unit) "" else unit
-                            },
-                            label = { Text(unit, style = MaterialTheme.typography.labelSmall) }
-                        )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Pulsante Aggiungi
-            FilledTonalButton(
-                onClick = {
-                    if (name.isNotBlank()) {
-                        onAdd(name, selectedCategory.name, quantity, selectedUnit)
-                        name = ""
-                        selectedCategory = Category.ALTRO
-                        quantity = 1
-                        selectedUnit = ""
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = name.isNotBlank()
-            ) {
-                Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Aggiungi")
-            }
+            OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Prezzo per unità (€), facoltativo") },
+                isError = price.isNotBlank() && parsedPrice == null, enabled = !saving, singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+            if (parsedQuantity == null) Text("Inserisci una quantità maggiore di zero", color = MaterialTheme.colorScheme.error)
+            if (price.isNotBlank() && parsedPrice == null) Text("Inserisci un prezzo valido con al massimo due decimali", color = MaterialTheme.colorScheme.error)
+        }
+        if (!compact) Button(onClick = { submit() }, enabled = valid && !saving, modifier = Modifier.fillMaxWidth()) {
+            Text(if (saving) "Salvataggio…" else "Salva")
         }
     }
 }
